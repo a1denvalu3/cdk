@@ -522,7 +522,7 @@ impl<'a> PreparedMelt<'a> {
                 finalized.into_change(),
             ))),
             MeltSagaResult::Pending(pending_saga) => Ok(MeltOutcome::Pending(PendingMelt {
-                saga: Box::new(pending_saga),
+                saga: pending_saga,
                 metadata: self.metadata,
             })),
         }
@@ -708,7 +708,7 @@ impl Wallet {
             )),
             MeltSagaResult::Pending(pending_saga) => {
                 let pending = PendingMelt {
-                    saga: Box::new(pending_saga),
+                    saga: pending_saga,
                     metadata,
                 };
                 pending.wait().await
@@ -894,6 +894,19 @@ impl Wallet {
             self.melt_lightning_address_quote(address, amount).await
         }
     }
+
+    /// Get a melt quote for a human-readable address (alias for `melt_human_readable_quote`)
+    #[cfg(all(feature = "bip353", feature = "wallet", not(target_arch = "wasm32")))]
+    pub async fn melt_human_readable(
+        &self,
+        address: &str,
+        amount_msat: impl Into<crate::Amount>,
+        network: bitcoin::Network,
+    ) -> Result<MeltQuote, Error> {
+        self.melt_human_readable_quote(address, amount_msat, network)
+            .await
+    }
+
     /// Melt quote for all payment methods
     ///
     /// Accepts `Bolt11Invoice`, `Offer`, `String`, or `&str` for the request parameter.

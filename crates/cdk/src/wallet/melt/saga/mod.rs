@@ -63,7 +63,7 @@ pub enum MeltSagaResult<'a> {
     /// Melt finalized (paid)
     Finalized(MeltSaga<'a, Finalized>),
     /// Melt pending
-    Pending(MeltSaga<'a, PaymentPending>),
+    Pending(Box<MeltSaga<'a, PaymentPending>>),
 }
 
 /// Saga pattern implementation for melt operations.
@@ -964,7 +964,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
                                 quote_info.id
                             );
                             self.handle_pending().await;
-                            return Ok(MeltSagaResult::Pending(MeltSaga {
+                            return Ok(MeltSagaResult::Pending(Box::new(MeltSaga {
                                 wallet: self.wallet,
                                 compensations: self.compensations,
                                 state_data: PaymentPending {
@@ -973,7 +973,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
                                     final_proofs: self.state_data.final_proofs.clone(),
                                     premint_secrets: self.state_data.premint_secrets.clone(),
                                 },
-                            }));
+                            })));
                         }
                     },
                     Err(check_err) => {
@@ -983,7 +983,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
                             check_err
                         );
                         self.handle_pending().await;
-                        return Ok(MeltSagaResult::Pending(MeltSaga {
+                        return Ok(MeltSagaResult::Pending(Box::new(MeltSaga {
                             wallet: self.wallet,
                             compensations: self.compensations,
                             state_data: PaymentPending {
@@ -992,7 +992,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
                                 final_proofs: self.state_data.final_proofs.clone(),
                                 premint_secrets: self.state_data.premint_secrets.clone(),
                             },
-                        }));
+                        })));
                     }
                 }
             }
@@ -1017,7 +1017,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
             }
             MeltQuoteState::Pending => {
                 self.handle_pending().await;
-                Ok(MeltSagaResult::Pending(MeltSaga {
+                Ok(MeltSagaResult::Pending(Box::new(MeltSaga {
                     wallet: self.wallet,
                     compensations: self.compensations,
                     state_data: PaymentPending {
@@ -1026,7 +1026,7 @@ impl<'a> MeltSaga<'a, MeltRequested> {
                         final_proofs: self.state_data.final_proofs.clone(),
                         premint_secrets: self.state_data.premint_secrets.clone(),
                     },
-                }))
+                })))
             }
             MeltQuoteState::Failed => {
                 self.handle_failure().await;
